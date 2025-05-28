@@ -31,6 +31,7 @@ export class XAmzDateStack extends cdk.Stack {
         origin: new origins.HttpOrigin('example.com', {
           protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
         }),
+        compress: false,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         functionAssociations: [
           {
