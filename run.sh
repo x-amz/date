@@ -20,3 +20,4 @@ elif [ "$1" == "test" ]; then
 else
   node -e "$js; const event = { response: $dummy_response }; console.log(handler(event).body.data);"
 fi
+
