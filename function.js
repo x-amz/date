@@ -7,6 +7,7 @@ function handler(event) {
   response.statusCode = 200;
   response.statusDescription = 'OK';
   response.headers['content-type'] = { value: 'text/plain' };
+  response.headers['content-encoding'] = { value: 'identity' };
   response.headers['x-amz-date'] = { value: timestamp };
   response.body = {
     encoding: 'text',
