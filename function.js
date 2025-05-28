@@ -6,8 +6,8 @@ function handler(event) {
 
   response.statusCode = 200;
   response.statusDescription = 'OK';
-  response.headers['content-type'] = [{ key: 'Content-Type', value: 'text/plain' }];
-  response.headers['x-amz-date'] = [{ key: 'X-Amz-Date', value: timestamp }];
+  response.headers['content-type'] = { value: 'text/plain' };
+  response.headers['x-amz-date'] = { value: timestamp };
   response.body = {
     encoding: 'text',
     data: timestamp,
