@@ -1,6 +1,7 @@
 # x-amz-date
 
 Demonstration CloudFront function returning the current timestamp.
+The HTML page and preview image are served from an S3 bucket.
 
 ## Usage
 
@@ -18,4 +19,12 @@ npx cdk deploy --require-approval never
 ```
 
 The deployment automatically packages `function.js` and provisions the
-CloudFront distribution.
+CloudFront distribution and S3 bucket.
+
+Upload a `preview.png` file to the bucket with:
+
+```
+scripts/upload-preview.sh /path/to/preview.png
+```
+
+The image will be available at `https://x-amz.date/preview.png`.

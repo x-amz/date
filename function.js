@@ -1,4 +1,6 @@
 function handler(event) {
+  var response = event.response;
+
   var now = new Date();
 
   // Precompute each part manually to avoid closure + method calls
@@ -14,16 +16,13 @@ function handler(event) {
 
   var timestamp = `${year}${pad2(month)}${pad2(day)}T${pad2(hour)}${pad2(minute)}${pad2(second)}Z`;
 
-  var response = event.response;
   response.statusCode = 200;
   response.statusDescription = 'OK';
-  response.headers['content-type'] = { value: 'text/plain' };
-  response.headers['content-encoding'] = { value: 'identity' };
   response.headers['x-amz-date'] = { value: timestamp };
-  response.body = {
-    encoding: 'text',
-    data: timestamp,
-  };
+
+  if (response.body && response.body.encoding === 'text') {
+    response.body.data = response.body.data.replace('###TIMESTAMP###', timestamp);
+  }
 
   return response;
 }
