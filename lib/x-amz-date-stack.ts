@@ -5,6 +5,8 @@ import * as certmgr from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 export class XAmzDateStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -19,18 +21,28 @@ export class XAmzDateStack extends cdk.Stack {
       validation: certmgr.CertificateValidation.fromDns(zone),
     });
 
+    const siteBucket = new s3.Bucket(this, 'SiteBucket', {
+      bucketName: 'x-amz-date-site',
+      publicReadAccess: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    new s3deploy.BucketDeployment(this, 'DeploySite', {
+      destinationBucket: siteBucket,
+      sources: [s3deploy.Source.asset('site')],
+    });
+
     const cfFunction = new cloudfront.Function(this, 'CloudFrontFunction', {
       functionName: 'xAmzDateFunction',
-      comment: 'Return current X-Amz-Date string',
+      comment: 'Inject current X-Amz-Date string',
       runtime: cloudfront.FunctionRuntime.JS_2_0,
       code: cloudfront.FunctionCode.fromFile({ filePath: 'function.js' }),
     });
 
     const distribution = new cloudfront.Distribution(this, 'CloudFrontDistribution', {
       defaultBehavior: {
-        origin: new origins.HttpOrigin('example.com', {
-          protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
-        }),
+        origin: new origins.S3Origin(siteBucket),
         compress: false,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         functionAssociations: [
@@ -40,6 +52,7 @@ export class XAmzDateStack extends cdk.Stack {
           },
         ],
       },
+      defaultRootObject: 'index.html',
       domainNames: ['x-amz.date'],
       certificate,
     });
