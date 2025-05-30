@@ -20,7 +20,10 @@ function handler(event) {
   response.statusDescription = 'OK';
   response.headers['x-amz-date'] = { value: timestamp };
 
-  response.body.data = response.body.data.replace('###TIMESTAMP###', timestamp);
+  response.body = {
+    encoding: 'text',
+    data: timestamp,
+  };
 
   return response;
 }
