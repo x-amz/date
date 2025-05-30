@@ -24,6 +24,12 @@ export class XAmzDateStack extends cdk.Stack {
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       bucketName: 'x-amz-date-site',
       publicReadAccess: true,
+      blockPublicAccess: {
+        blockPublicPolicy: false,
+        blockPublicAcls: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
