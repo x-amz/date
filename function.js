@@ -1,5 +1,9 @@
 function handler(event) {
   var response = event.response;
+  
+  if (request.uri.endsWith('.png')) {
+    return response;
+  }
 
   var now = new Date();
 
@@ -19,11 +23,26 @@ function handler(event) {
   response.statusCode = 200;
   response.statusDescription = 'OK';
   response.headers['x-amz-date'] = { value: timestamp };
-
-  response.body = {
-    encoding: 'text',
-    data: timestamp,
-  };
+  response.headers['content-type'] = { value: 'text/html' };
+  response.headers['cache-control'] = { value: 'no-store' };
+  response.body = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>x-amz-date</title>
+  <meta property="og:title" content="x-amz-date" />
+  <meta property="og:image" content="https://x-amz.date/preview.png" />
+  <meta property="og:description" content="Current x-amz-date timestamp" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://x-amz.date/" />
+</head>
+<body>
+  <code>${timestamp}</code>
+</body>
+</html>
+  `;
 
   return response;
 }
