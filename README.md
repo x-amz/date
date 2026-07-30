@@ -3,10 +3,16 @@
 Demonstration CloudFront function returning the current timestamp.
 The HTML page and preview image are served from an S3 bucket.
 
+Requests without an `Accept` header (and non-HTML requests) receive the timestamp
+as a single `text/plain` string. Requests that explicitly accept `text/html`
+receive the rich-link HTML page. Preview image and favicon requests pass through
+to the S3 origin.
+
 ## Usage
 
 - `./run.sh` – run the function locally and print the timestamp.
-- `./run.sh test` – run a local test of the function output.
+- `npm test` or `./run.sh test` – run the local behavior tests.
+- `npm run build` – type-check the CDK application.
 - `./integration-test.sh` – hit the deployed URL and verify the response.
 
 ## Deployment

@@ -1,32 +1,38 @@
 function handler(event) {
+  var request = event.request;
   var response = event.response;
-  
-  if (request.uri.endsWith('.png')) {
+
+  // Static browser assets must retain the body and content type from S3.
+  if (request.uri.endsWith('.png') || request.uri === '/favicon.ico') {
     return response;
   }
 
   var now = new Date();
-
-  // Precompute each part manually to avoid closure + method calls
   var year = now.getUTCFullYear();
   var month = now.getUTCMonth() + 1;
   var day = now.getUTCDate();
   var hour = now.getUTCHours();
   var minute = now.getUTCMinutes();
   var second = now.getUTCSeconds();
-
-  // Inline padding with arithmetic to avoid string method overhead
   var pad2 = (n) => (n < 10 ? '0' + n : '' + n);
-
   var timestamp = `${year}${pad2(month)}${pad2(day)}T${pad2(hour)}${pad2(minute)}${pad2(second)}Z`;
+  var accept = request.headers.accept ? request.headers.accept.value : '';
+  var acceptsHtml = accept.split(',').some((entry) => {
+    var parts = entry.trim().toLowerCase().split(';');
+    var quality = parts.find((part) => part.trim().startsWith('q='));
+    return parts[0].trim() === 'text/html' && (!quality || parseFloat(quality.split('=')[1]) > 0);
+  });
 
   response.statusCode = 200;
   response.statusDescription = 'OK';
   response.headers['x-amz-date'] = { value: timestamp };
-  response.headers['content-type'] = { value: 'text/html' };
   response.headers['cache-control'] = { value: 'no-store' };
-  response.body = `
-<!DOCTYPE html>
+
+  if (acceptsHtml) {
+    response.headers['content-type'] = { value: 'text/html; charset=utf-8' };
+    response.body = {
+      encoding: 'text',
+      data: `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -41,8 +47,12 @@ function handler(event) {
 <body>
   <code>${timestamp}</code>
 </body>
-</html>
-  `;
+</html>`,
+    };
+  } else {
+    response.headers['content-type'] = { value: 'text/plain; charset=utf-8' };
+    response.body = { encoding: 'text', data: timestamp };
+  }
 
   return response;
 }

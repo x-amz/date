@@ -7,5 +7,7 @@ if [ -n "$STATUS" ]; then
   exit $STATUS
 fi
 echo "Output: $OUTPUT"
-node -e "require('./test.js').testXAmzDate('$OUTPUT')"
-
+if [[ ! "$OUTPUT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
+  echo "Response is not a single x-amz-date timestamp" >&2
+  exit 1
+fi

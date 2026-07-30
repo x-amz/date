@@ -2,5 +2,4 @@ node_modules/
 dist/
 .cdk.staging/
 cdk.out/
-package-lock.json
 .DS_STORE
