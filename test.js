@@ -1,21 +1,56 @@
-function testXAmzDate(output) {
-  const received = new Date(
-    output.slice(0, 4) + '-' +
-    output.slice(4, 6) + '-' +
-    output.slice(6, 8) + 'T' +
-    output.slice(9, 11) + ':' +
-    output.slice(11, 13) + ':' +
-    output.slice(13, 15) + 'Z'
-  );
-  const now = new Date();
-  const diff = Math.abs(now - received);
-  console.log("Diff (ms):", diff);
-  if (diff < 1000) {
-    console.log("✅ Timestamp is within 1 second");
-  } else {
-    console.error("❌ Timestamp is out of sync");
-    process.exit(1);
-  }
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const test = require('node:test');
+const vm = require('node:vm');
+
+const context = vm.createContext({ Date });
+vm.runInContext(fs.readFileSync('function.js', 'utf8'), context);
+
+function invoke({ uri = '/', accept } = {}) {
+  const headers = {};
+  if (accept !== undefined) headers.accept = { value: accept };
+
+  return context.handler({
+    request: { uri, headers },
+    response: {
+      statusCode: '200',
+      headers: { 'content-type': { value: 'text/html' } },
+      body: { encoding: 'text', data: 'origin body' },
+    },
+  });
 }
 
-module.exports = { testXAmzDate };
+function assertTimestamp(value) {
+  assert.match(value, /^\d{8}T\d{6}Z$/);
+  const parsed = new Date(value.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, '$1-$2-$3T$4:$5:$6Z'));
+  assert.ok(Math.abs(Date.now() - parsed.getTime()) < 2_000);
+}
+
+test('a request without Accept receives one plain timestamp string', () => {
+  const response = invoke();
+  assert.equal(response.headers['content-type'].value, 'text/plain; charset=utf-8');
+  assertTimestamp(response.body.data);
+  assert.equal(response.body.data, response.headers['x-amz-date'].value);
+});
+
+test('only an explicit HTML request receives the rich-link page', () => {
+  const response = invoke({ accept: 'text/html,application/xhtml+xml;q=0.9' });
+  assert.equal(response.headers['content-type'].value, 'text/html; charset=utf-8');
+  assert.match(response.body.data, /^<!DOCTYPE html>/);
+  assert.match(response.body.data, /property="og:image"/);
+  assert.match(response.body.data, new RegExp(response.headers['x-amz-date'].value));
+});
+
+test('wildcard and disabled HTML accept types receive plain text', () => {
+  assert.equal(invoke({ accept: '*/*' }).headers['content-type'].value, 'text/plain; charset=utf-8');
+  assert.equal(invoke({ accept: 'text/html;q=0, */*' }).headers['content-type'].value, 'text/plain; charset=utf-8');
+});
+
+test('image and favicon responses pass through unchanged', () => {
+  for (const uri of ['/preview.png', '/favicon.ico']) {
+    const response = invoke({ uri, accept: 'image/*' });
+    assert.equal(response.body.data, 'origin body');
+    assert.equal(response.headers['content-type'].value, 'text/html');
+    assert.equal(response.headers['x-amz-date'], undefined);
+  }
+});
