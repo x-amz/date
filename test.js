@@ -37,7 +37,8 @@ test('only an explicit HTML request receives the rich-link page', () => {
   const response = invoke({ accept: 'text/html,application/xhtml+xml;q=0.9' });
   assert.equal(response.headers['content-type'].value, 'text/html; charset=utf-8');
   assert.match(response.body.data, /^<!DOCTYPE html>/);
-  assert.match(response.body.data, /property="og:image"/);
+  assert.match(response.body.data, /rel="apple-touch-icon"/);
+  assert.doesNotMatch(response.body.data, /property="og:image"/);
   assert.match(response.body.data, new RegExp(response.headers['x-amz-date'].value));
 });
 
@@ -47,7 +48,7 @@ test('wildcard and disabled HTML accept types receive plain text', () => {
 });
 
 test('image and favicon responses pass through unchanged', () => {
-  for (const uri of ['/preview.png', '/favicon.ico']) {
+  for (const uri of ['/apple-touch-icon.png', '/favicon.ico']) {
     const response = invoke({ uri, accept: 'image/*' });
     assert.equal(response.body.data, 'origin body');
     assert.equal(response.headers['content-type'].value, 'text/html');

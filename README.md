@@ -1,12 +1,15 @@
 # x-amz-date
 
 Demonstration CloudFront function returning the current timestamp.
-The HTML page and preview image are served from an S3 bucket.
+The HTML page and touch icon are served from an S3 bucket.
 
 Requests without an `Accept` header (and non-HTML requests) receive the timestamp
 as a single `text/plain` string. Requests that explicitly accept `text/html`
-receive the rich-link HTML page. Preview image and favicon requests pass through
+receive the rich-link HTML page. Icon and favicon requests pass through
 to the S3 origin.
+
+The page advertises an `apple-touch-icon` and no `og:image`, so Messages
+renders the compact inline preview rather than a large image card.
 
 ## Usage
 
@@ -27,10 +30,11 @@ npx cdk deploy --require-approval never
 The deployment automatically packages `function.js` and provisions the
 CloudFront distribution and S3 bucket.
 
-Upload a `preview.png` file to the bucket with:
+The `site/` directory (HTML page and touch icon) deploys to the bucket with the
+stack. To push a new icon without a full deploy:
 
 ```
-scripts/upload-preview.sh /path/to/preview.png
+scripts/upload-icon.sh /path/to/apple-touch-icon.png
 ```
 
-The image will be available at `https://x-amz.date/preview.png`.
+The image will be available at `https://x-amz.date/apple-touch-icon.png`.
